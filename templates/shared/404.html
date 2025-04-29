@@ -1,0 +1,13 @@
+<!-- templates/shared/404.html -->
+{% extends 'shared/layout.html' %}
+
+{% block title %}404 - Halaman Tidak Ditemukan{% endblock %}
+
+{% block content %}
+<div class="text-center py-5">
+    <h1 class="display-1 fw-bold">404</h1>
+    <p class="fs-3">Halaman Tidak Ditemukan</p>
+    <p class="lead">Halaman yang Anda cari tidak ditemukan.</p>
+    <a href="{{ url_for('index') }}" class="btn btn-primary">Kembali ke Beranda</a>
+</div>
+{% endblock %}

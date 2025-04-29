@@ -1,0 +1,60 @@
+<!-- templates/shared/sidebar.html -->
+<div class="position-sticky pt-3">
+    <ul class="nav flex-column">
+        {% if current_user.role == 'admin' %}
+        <!-- Admin Sidebar -->
+        <li class="nav-item">
+            <a class="nav-link {% if request.path == url_for('admin_dashboard') %}active{% endif %}" href="{{ url_for('admin_dashboard') }}">
+                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.path == url_for('team_leaders') %}active{% endif %}" href="{{ url_for('team_leaders') }}">
+                <i class="fas fa-users-cog me-2"></i>Team Leader
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.path == url_for('employees') %}active{% endif %}" href="{{ url_for('employees') }}">
+                <i class="fas fa-users me-2"></i>Karyawan
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.path == url_for('reports') %}active{% endif %}" href="{{ url_for('reports') }}">
+                <i class="fas fa-chart-bar me-2"></i>Laporan
+            </a>
+        </li>
+        {% elif current_user.role == 'team_leader' %}
+        <!-- Team Leader Sidebar -->
+        <li class="nav-item">
+            <a class="nav-link {% if request.path == url_for('team_leader_dashboard') %}active{% endif %}" href="{{ url_for('team_leader_dashboard') }}">
+                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.path == url_for('team_leader_employees') %}active{% endif %}" href="{{ url_for('team_leader_employees') }}">
+                <i class="fas fa-users me-2"></i>Karyawan
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.path == url_for('attendance_scan') %}active{% endif %}" href="{{ url_for('attendance_scan') }}">
+                <i class="fas fa-qrcode me-2"></i>Scan Absensi
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.path == url_for('attendance_manage') %}active{% endif %}" href="{{ url_for('attendance_manage') }}">
+                <i class="fas fa-clipboard-check me-2"></i>Kelola Absensi
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.path == url_for('leave_requests') %}active{% endif %}" href="{{ url_for('leave_requests') }}">
+                <i class="fas fa-calendar-alt me-2"></i>Permintaan Cuti
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.path == url_for('team_leader_reports') %}active{% endif %}" href="{{ url_for('team_leader_reports') }}">
+                <i class="fas fa-chart-bar me-2"></i>Laporan
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+</div>

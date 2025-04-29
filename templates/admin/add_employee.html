@@ -1,0 +1,112 @@
+{% extends 'shared/layout.html' %}
+
+{% block title %}Tambah Karyawan - Sistem Absensi{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="fas fa-user-plus me-2"></i>Tambah Karyawan</h1>
+</div>
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card shadow">
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('add_employee') }}" enctype="multipart/form-data">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="nik" class="form-label">NIK</label>
+                            <input type="text" class="form-control" id="nik" name="nik" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="name" class="form-label">Nama Lengkap</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="phone" class="form-label">No. Telepon</label>
+                            <input type="text" class="form-control" id="phone" name="phone" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="position" class="form-label">Posisi</label>
+                            <input type="text" class="form-control" id="position" name="position" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="department" class="form-label">Departemen</label>
+                            <input type="text" class="form-control" id="department" name="department" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="team_leader_id" class="form-label">Team Leader</label>
+                        <select class="form-select" id="team_leader_id" name="team_leader_id" required>
+                            <option value="">Pilih Team Leader</option>
+                            {% for leader in team_leaders %}
+                            <option value="{{ leader.id }}">{{ leader.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="profile_pic" class="form-label">Foto Profil</label>
+                        <input type="file" class="form-control" id="profile_pic" name="profile_pic" accept="image/*">
+                        <div class="form-text">Format yang didukung: JPG, PNG, GIF. Ukuran maksimal 5MB.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="is_active" name="is_active" checked>
+                            <label class="form-check-label" for="is_active">Aktif</label>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('employees') }}" class="btn btn-secondary me-md-2">Batal</a>
+                        <button type="submit" class="btn btn-primary">Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Preview image before upload
+    document.addEventListener('DOMContentLoaded', function() {
+        const profilePic = document.getElementById('profile_pic');
+        
+        profilePic.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // Create preview if it doesn't exist
+                    let preview = document.getElementById('image-preview');
+                    if (!preview) {
+                        preview = document.createElement('div');
+                        preview.id = 'image-preview';
+                        preview.className = 'mt-2 text-center';
+                        profilePic.parentNode.appendChild(preview);
+                    }
+                    
+                    // Update preview content
+                    preview.innerHTML = `
+                        <img src="${e.target.result}" class="img-thumbnail" style="max-height: 200px">
+                    `;
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+    });
+</script>
+{% endblock %}

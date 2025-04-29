@@ -1,0 +1,92 @@
+{% extends 'shared/layout.html' %}
+
+{% block title %}Laporan - Sistem Absensi{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="fas fa-chart-bar me-2"></i>Laporan</h1>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card shadow h-100">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-clipboard-check me-2"></i>Laporan Kehadiran</h5>
+                <p class="card-text">Lihat laporan kehadiran karyawan berdasarkan berbagai filter.</p>
+                <a href="{{ url_for('attendance_report') }}" class="btn btn-primary">Lihat Laporan</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-4">
+        <div class="card shadow h-100">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-calendar-alt me-2"></i>Laporan Cuti</h5>
+                <p class="card-text">Lihat laporan cuti, izin, dan sakit karyawan.</p>
+                <a href="{{ url_for('leave_report') }}" class="btn btn-primary">Lihat Laporan</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card shadow h-100">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-clock me-2"></i>Laporan Keterlambatan</h5>
+                <p class="card-text">Lihat laporan keterlambatan karyawan.</p>
+                <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#comingSoonModal">Lihat Laporan</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-4">
+        <div class="card shadow h-100">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-file-excel me-2"></i>Ekspor Data</h5>
+                <p class="card-text">Ekspor data kehadiran karyawan ke Excel.</p>
+                <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#comingSoonModal">Ekspor Data</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card shadow h-100">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-chart-pie me-2"></i>Statistik Departemen</h5>
+                <p class="card-text">Lihat statistik kehadiran berdasarkan departemen.</p>
+                <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#comingSoonModal">Lihat Statistik</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-4">
+        <div class="card shadow h-100">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-award me-2"></i>Performa Karyawan</h5>
+                <p class="card-text">Analisis performa kehadiran karyawan.</p>
+                <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#comingSoonModal">Lihat Performa</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Coming Soon Modal -->
+<div class="modal fade" id="comingSoonModal" tabindex="-1" aria-labelledby="comingSoonModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="comingSoonModalLabel">Fitur Akan Datang</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <i class="fas fa-tools fa-4x mb-3 text-warning"></i>
+                <h4>Dalam Pengembangan</h4>
+                <p class="mb-0">Fitur ini sedang dalam tahap pengembangan dan akan segera tersedia. Mohon tunggu pembaruan selanjutnya.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

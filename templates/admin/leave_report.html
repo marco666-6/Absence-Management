@@ -1,0 +1,286 @@
+{% extends 'shared/layout.html' %}
+
+{% block title %}Laporan Cuti - Sistem Absensi{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="fas fa-calendar-alt me-2"></i>Laporan Cuti</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('reports') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Kembali
+        </a>
+    </div>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <h6 class="m-0 font-weight-bold text-primary">Filter Laporan</h6>
+    </div>
+    <div class="card-body">
+        <form method="POST" id="filterForm">
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <label for="start_date" class="form-label">Tanggal Mulai</label>
+                    <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date.strftime('%Y-%m-%d') if start_date else '' }}" required>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="end_date" class="form-label">Tanggal Selesai</label>
+                    <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date.strftime('%Y-%m-%d') if end_date else '' }}" required>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label for="team_leader_id" class="form-label">Team Leader</label>
+                    <select class="form-select" id="team_leader_id" name="team_leader_id">
+                        <option value="">-- Semua --</option>
+                        {% for team_leader in team_leaders %}
+                        <option value="{{ team_leader.id }}" {% if request.form.get('team_leader_id')|int == team_leader.id %}selected{% endif %}>
+                            {{ team_leader.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label for="department" class="form-label">Departemen</label>
+                    <select class="form-select" id="department" name="department">
+                        <option value="">-- Semua --</option>
+                        {% for dept in departments %}
+                        <option value="{{ dept.department }}" {% if request.form.get('department') == dept.department %}selected{% endif %}>
+                            {{ dept.department }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label for="leave_type" class="form-label">Jenis Cuti</label>
+                    <select class="form-select" id="leave_type" name="leave_type">
+                        <option value="">-- Semua --</option>
+                        {% for type in leave_types %}
+                        <option value="{{ type }}" {% if request.form.get('leave_type') == type %}selected{% endif %}>
+                            {{ type|capitalize }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="">-- Semua --</option>
+                        {% for status_option in statuses %}
+                        <option value="{{ status_option }}" {% if request.form.get('status') == status_option %}selected{% endif %}>
+                            {% if status_option == 'pending' %}
+                                Menunggu
+                            {% elif status_option == 'approved' %}
+                                Disetujui
+                            {% elif status_option == 'rejected' %}
+                                Ditolak
+                            {% else %}
+                                {{ status_option|capitalize }}
+                            {% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="text-end">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-filter me-1"></i> Filter
+                </button>
+                <button type="button" class="btn btn-success" id="exportBtn">
+                    <i class="fas fa-file-excel me-1"></i> Ekspor ke Excel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if leave_data is defined %}
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Hasil Laporan Cuti</h6>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped" id="leaveTable" width="100%" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>NIK</th>
+                        <th>Nama Karyawan</th>
+                        <th>Departemen</th>
+                        <th>Jenis</th>
+                        <th>Tanggal Mulai</th>
+                        <th>Tanggal Selesai</th>
+                        <th>Durasi</th>
+                        <th>Status</th>
+                        <th>Alasan</th>
+                        <th>Tanggal Pengajuan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for leave, employee in leave_data %}
+                    <tr>
+                        <td>{{ leave.id }}</td>
+                        <td>{{ employee.nik }}</td>
+                        <td>{{ employee.name }}</td>
+                        <td>{{ employee.department }}</td>
+                        <td>
+                            {% if leave.leave_type == 'sakit' %}
+                                <span class="badge bg-danger">Sakit</span>
+                            {% elif leave.leave_type == 'cuti' %}
+                                <span class="badge bg-primary">Cuti</span>
+                            {% elif leave.leave_type == 'izin' %}
+                                <span class="badge bg-info">Izin</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ leave.leave_type }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ leave.start_date.strftime('%d-%m-%Y') }}</td>
+                        <td>{{ leave.end_date.strftime('%d-%m-%Y') }}</td>
+                        <td>{{ (leave.end_date - leave.start_date).days + 1 }} hari</td>
+                        <td>
+                            {% if leave.status == 'pending' %}
+                                <span class="badge bg-warning">Menunggu</span>
+                            {% elif leave.status == 'approved' %}
+                                <span class="badge bg-success">Disetujui</span>
+                            {% elif leave.status == 'rejected' %}
+                                <span class="badge bg-danger">Ditolak</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ leave.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ leave.reason }}</td>
+                        <td>{{ leave.created_at.strftime('%d-%m-%Y %H:%M') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-xl-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Distribusi Jenis Cuti</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="leaveTypeChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Status Pengajuan</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="leaveStatusChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize DataTable
+        const table = $('#leaveTable').DataTable({
+            order: [[10, 'desc']],  // Sort by created_at date by default
+            pageLength: 25,
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.12.1/i18n/id.json'
+            }
+        });
+
+        {% if leave_data is defined %}
+            // Count leave types and statuses for charts
+            let sakitCount = 0;
+            let cutiCount = 0;
+            let izinCount = 0;
+            
+            let pendingCount = 0;
+            let approvedCount = 0;
+            let rejectedCount = 0;
+            
+            // Sample data for demonstration - In a real app, you'd calculate this from your dataset
+            {% for leave, employee in leave_data %}
+                {% if leave.leave_type == 'sakit' %}
+                    sakitCount++;
+                {% elif leave.leave_type == 'cuti' %}
+                    cutiCount++;
+                {% elif leave.leave_type == 'izin' %}
+                    izinCount++;
+                {% endif %}
+                
+                {% if leave.status == 'pending' %}
+                    pendingCount++;
+                {% elif leave.status == 'approved' %}
+                    approvedCount++;
+                {% elif leave.status == 'rejected' %}
+                    rejectedCount++;
+                {% endif %}
+            {% endfor %}
+            
+            // Create pie chart for leave type distribution
+            const typeCtx = document.getElementById('leaveTypeChart').getContext('2d');
+            const typeChart = new Chart(typeCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Sakit', 'Cuti', 'Izin'],
+                    datasets: [{
+                        data: [sakitCount, cutiCount, izinCount],
+                        backgroundColor: [
+                            'rgba(220, 53, 69, 0.8)',
+                            'rgba(13, 110, 253, 0.8)',
+                            'rgba(13, 202, 240, 0.8)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+            
+            // Create pie chart for leave status distribution
+            const statusCtx = document.getElementById('leaveStatusChart').getContext('2d');
+            const statusChart = new Chart(statusCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Menunggu', 'Disetujui', 'Ditolak'],
+                    datasets: [{
+                        data: [pendingCount, approvedCount, rejectedCount],
+                        backgroundColor: [
+                            'rgba(255, 193, 7, 0.8)',
+                            'rgba(40, 167, 69, 0.8)',
+                            'rgba(220, 53, 69, 0.8)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        {% endif %}
+
+        // Export to Excel function (placeholder - would require server-side implementation)
+        document.getElementById('exportBtn').addEventListener('click', function() {
+            alert('Fitur ekspor data akan segera tersedia!');
+        });
+    });
+</script>
+{% endblock %}
