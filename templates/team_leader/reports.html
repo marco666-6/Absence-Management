@@ -1,0 +1,282 @@
+{% extends 'shared/layout.html' %}
+
+{% block title %}Laporan - Sistem Absensi{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
+    <h1 class="h2"><i class="fas fa-chart-bar me-2"></i>Laporan</h1>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card shadow h-100">
+            <div class="card-body">
+                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Informasi</div>
+                <p class="mb-0">
+                    <i class="fas fa-info-circle me-1 text-primary"></i>
+                    Halaman ini berisi laporan absensi dan cuti karyawan yang berada di bawah pengawasan Anda.
+                    Pilih jenis laporan yang ingin ditampilkan di bawah ini.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card shadow border-left-primary h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Laporan Absensi</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">Kehadiran Karyawan</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-calendar-check fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+                <hr>
+                <p>Laporan detail absensi karyawan berdasarkan periode waktu tertentu.</p>
+                <div class="d-grid">
+                    <a href="{{ url_for('team_leader_attendance_report') }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-eye me-1"></i> Lihat Laporan
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card shadow border-left-success h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Laporan Cuti/Izin</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">Cuti & Izin Karyawan</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-calendar-alt fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+                <hr>
+                <p>Laporan detail pengambilan cuti dan izin karyawan berdasarkan periode waktu tertentu.</p>
+                <div class="d-grid">
+                    <a href="{{ url_for('team_leader_leave_report') }}" class="btn btn-success btn-sm">
+                        <i class="fas fa-eye me-1"></i> Lihat Laporan
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Ringkasan Kehadiran Bulan Ini</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-4">
+                        <div class="card bg-primary text-white h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="me-3">
+                                        <div class="text-white-50 small">Hadir</div>
+                                        <div class="h5 mb-0">{{ present_count|default(0) }}</div>
+                                    </div>
+                                    <div><i class="fas fa-user-check fa-2x text-white-50"></i></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3 mb-4">
+                        <div class="card bg-warning text-white h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="me-3">
+                                        <div class="text-white-50 small">Terlambat</div>
+                                        <div class="h5 mb-0">{{ late_count|default(0) }}</div>
+                                    </div>
+                                    <div><i class="fas fa-user-clock fa-2x text-white-50"></i></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3 mb-4">
+                        <div class="card bg-danger text-white h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="me-3">
+                                        <div class="text-white-50 small">Tidak Hadir</div>
+                                        <div class="h5 mb-0">{{ absent_count|default(0) }}</div>
+                                    </div>
+                                    <div><i class="fas fa-user-times fa-2x text-white-50"></i></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3 mb-4">
+                        <div class="card bg-success text-white h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="me-3">
+                                        <div class="text-white-50 small">Izin/Cuti</div>
+                                        <div class="h5 mb-0">{{ leave_count|default(0) }}</div>
+                                    </div>
+                                    <div><i class="fas fa-user-shield fa-2x text-white-50"></i></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h5 class="font-weight-bold">Top 5 Karyawan Terlambat Bulan Ini</h5>
+                        {% if late_employees and late_employees|length > 0 %}
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>NIK</th>
+                                        <th>Nama</th>
+                                        <th>Posisi</th>
+                                        <th>Jumlah Keterlambatan</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for employee in late_employees %}
+                                    <tr>
+                                        <td>{{ employee.nik }}</td>
+                                        <td>{{ employee.name }}</td>
+                                        <td>{{ employee.position }}</td>
+                                        <td>{{ employee.late_count }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-1"></i> Tidak ada data keterlambatan bulan ini.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Absensi Mingguan</h6>
+            </div>
+            <div class="card-body">
+                <div id="weeklyAttendanceChart" style="height: 300px;"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Izin dan Cuti Bulanan</h6>
+            </div>
+            <div class="card-body">
+                <div id="monthlyLeaveChart" style="height: 300px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Data untuk chart (bisa diganti dengan data aktual dari backend)
+    const weeklyData = {
+        labels: ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'],
+        datasets: [
+            {
+                label: 'Hadir',
+                data: [15, 14, 16, 15, 13, 0, 0],
+                backgroundColor: '#4e73df',
+            },
+            {
+                label: 'Terlambat',
+                data: [2, 3, 1, 2, 4, 0, 0],
+                backgroundColor: '#f6c23e',
+            },
+            {
+                label: 'Tidak Hadir',
+                data: [1, 1, 1, 1, 1, 0, 0],
+                backgroundColor: '#e74a3b',
+            }
+        ]
+    };
+
+    const monthlyLeaveData = {
+        labels: ['Sakit', 'Cuti', 'Izin'],
+        datasets: [{
+            data: [4, 6, 2],
+            backgroundColor: ['#e74a3b', '#36b9cc', '#1cc88a'],
+        }]
+    };
+
+    // Buat chart saat halaman dimuat
+    document.addEventListener('DOMContentLoaded', function() {
+        const weeklyCtx = document.getElementById('weeklyAttendanceChart').getContext('2d');
+        const weeklyChart = new Chart(weeklyCtx, {
+            type: 'bar',
+            data: weeklyData,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Kehadiran Minggu Ini'
+                    },
+                },
+                scales: {
+                    x: {
+                        stacked: true,
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        const monthlyCtx = document.getElementById('monthlyLeaveChart').getContext('2d');
+        const monthlyChart = new Chart(monthlyCtx, {
+            type: 'pie',
+            data: monthlyLeaveData,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Distribusi Izin & Cuti Bulan Ini'
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

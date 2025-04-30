@@ -1,0 +1,203 @@
+{% extends 'shared/layout.html' %}
+
+{% block title %}Kelola Absensi - Sistem Absensi{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
+    <h1 class="h2"><i class="fas fa-clipboard-check me-2"></i>Kelola Absensi</h1>
+    <div>
+        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#manualEntryModal">
+            <i class="fas fa-plus me-1"></i>Input Manual
+        </button>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card shadow h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Tanggal</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ today.strftime('%d %B %Y') }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card shadow h-100">
+            <div class="card-body">
+                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Informasi</div>
+                <p class="mb-0">
+                    <i class="fas fa-info-circle me-1 text-primary"></i>
+                    Halaman ini menampilkan status absensi karyawan hari ini. Anda dapat menambahkan absensi secara manual jika diperlukan.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Daftar Absensi Hari Ini</h6>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>NIK</th>
+                        <th>Nama Karyawan</th>
+                        <th>Posisi</th>
+                        <th>Check In</th>
+                        <th>Check Out</th>
+                        <th>Status</th>
+                        <th>Keterangan</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for data in attendance_data %}
+                    <tr>
+                        <td>{{ data.employee.nik }}</td>
+                        <td>{{ data.employee.name }}</td>
+                        <td>{{ data.employee.position }}</td>
+                        <td>
+                            {% if data.attendance and data.attendance.check_in %}
+                                {{ data.attendance.check_in.strftime('%H:%M:%S') }}
+                            {% elif data.on_leave %}
+                                <span class="badge bg-info">Izin/Cuti</span>
+                            {% else %}
+                                <span class="text-danger">Belum Check In</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if data.attendance and data.attendance.check_out %}
+                                {{ data.attendance.check_out.strftime('%H:%M:%S') }}
+                            {% elif data.on_leave %}
+                                <span class="badge bg-info">Izin/Cuti</span>
+                            {% else %}
+                                <span class="text-secondary">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if data.on_leave %}
+                                <span class="badge bg-info">{{ data.on_leave.leave_type }}</span>
+                            {% elif data.attendance %}
+                                {% if data.attendance.status == 'present' %}
+                                    <span class="badge bg-success">Hadir</span>
+                                {% elif data.attendance.status == 'late' %}
+                                    <span class="badge bg-warning">Terlambat</span>
+                                {% elif data.attendance.status == 'absent' %}
+                                    <span class="badge bg-danger">Tidak Hadir</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge bg-secondary">Belum Tercatat</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if data.attendance and data.attendance.notes %}
+                                {{ data.attendance.notes }}
+                            {% elif data.on_leave %}
+                                {{ data.on_leave.reason }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#manualEntryModal" 
+                                data-employee-id="{{ data.employee.id }}"
+                                data-employee-name="{{ data.employee.name }}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Manual Attendance Entry -->
+<div class="modal fade" id="manualEntryModal" tabindex="-1" aria-labelledby="manualEntryModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="manualEntryModalLabel">Input Absensi Manual</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('manual_attendance_entry') }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="employee_id" class="form-label">Karyawan</label>
+                        <select class="form-select" id="employee_id" name="employee_id" required>
+                            <option value="">-- Pilih Karyawan --</option>
+                            {% for data in attendance_data %}
+                            <option value="{{ data.employee.id }}">{{ data.employee.name }} ({{ data.employee.nik }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="date" class="form-label">Tanggal</label>
+                        <input type="date" class="form-control" id="date" name="date" value="{{ today.strftime('%Y-%m-%d') }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="check_in_time" class="form-label">Waktu Check In</label>
+                        <input type="time" class="form-control" id="check_in_time" name="check_in_time">
+                    </div>
+                    <div class="mb-3">
+                        <label for="check_out_time" class="form-label">Waktu Check Out</label>
+                        <input type="time" class="form-control" id="check_out_time" name="check_out_time">
+                    </div>
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status" required>
+                            <option value="present">Hadir</option>
+                            <option value="late">Terlambat</option>
+                            <option value="absent">Tidak Hadir</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Catatan</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    $('#dataTable').DataTable({
+        language: {
+            url: 'https://cdn.datatables.net/plug-ins/1.11.5/i18n/id.json'
+        }
+    });
+    
+    // Set employee data when modal is shown
+    $('#manualEntryModal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget);
+        var employeeId = button.data('employee-id');
+        var employeeName = button.data('employee-name');
+        
+        if (employeeId) {
+            $('#employee_id').val(employeeId);
+        }
+    });
+});
+</script>
+{% endblock %}

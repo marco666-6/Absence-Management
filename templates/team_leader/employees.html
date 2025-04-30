@@ -1,0 +1,174 @@
+{% extends 'shared/layout.html' %}
+
+{% block title %}Daftar Karyawan - Sistem Absensi{% endblock %}
+
+{% block styles %}
+<style>
+    .employee-card {
+        transition: transform 0.3s ease;
+    }
+    .employee-card:hover {
+        transform: translateY(-5px);
+    }
+    .profile-pic {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 50%;
+    }
+    .badge-active {
+        background-color: #1cc88a;
+    }
+    .badge-inactive {
+        background-color: #e74a3b;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="fas fa-users me-2"></i>Daftar Karyawan</h1>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Filter Karyawan</h6>
+            </div>
+            <div class="card-body">
+                <form id="filterForm" class="row g-3">
+                    <div class="col-md-4">
+                        <label for="department" class="form-label">Departemen</label>
+                        <select class="form-select" id="department">
+                            <option value="">Semua Departemen</option>
+                            <option value="Produksi">Produksi</option>
+                            <option value="HRD">HRD</option>
+                            <option value="Marketing">Marketing</option>
+                            <option value="Finance">Finance</option>
+                            <option value="IT">IT</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status">
+                            <option value="">Semua Status</option>
+                            <option value="active">Aktif</option>
+                            <option value="inactive">Tidak Aktif</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="search" class="form-label">Cari</label>
+                        <input type="text" class="form-control" id="search" placeholder="Nama atau NIK">
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row" id="employeesList">
+    {% for employee in employees %}
+    <div class="col-md-6 col-lg-4 mb-4 employee-item" 
+         data-department="{{ employee.department }}" 
+         data-status="{{ 'active' if employee.is_active else 'inactive' }}">
+        <div class="card shadow employee-card h-100">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">{{ employee.name }}</h6>
+                <span class="badge badge-pill {{ 'badge-active' if employee.is_active else 'badge-inactive' }} text-white">
+                    {{ 'Aktif' if employee.is_active else 'Tidak Aktif' }}
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    {% if employee.profile_pic %}
+                    <img src="{{ url_for('static', filename='uploads/' + employee.profile_pic) }}" class="profile-pic" alt="{{ employee.name }}">
+                    {% else %}
+                    <img src="{{ url_for('static', filename='img/default-profile.png') }}" class="profile-pic" alt="{{ employee.name }}">
+                    {% endif %}
+                </div>
+                <div class="row mb-2">
+                    <div class="col-md-4 fw-bold">NIK</div>
+                    <div class="col-md-8">{{ employee.nik }}</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-md-4 fw-bold">Departemen</div>
+                    <div class="col-md-8">{{ employee.department }}</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-md-4 fw-bold">Posisi</div>
+                    <div class="col-md-8">{{ employee.position }}</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-md-4 fw-bold">Email</div>
+                    <div class="col-md-8">{{ employee.email }}</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-md-4 fw-bold">Telepon</div>
+                    <div class="col-md-8">{{ employee.phone }}</div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{{ url_for('view_employee', id=employee.id) }}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-eye me-1"></i>Detail
+                </a>
+                <a href="{{ url_for('download_qr', id=employee.id) }}" class="btn btn-info btn-sm">
+                    <i class="fas fa-qrcode me-1"></i>QR Code
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="row" id="noResults" style="display: none;">
+    <div class="col-12">
+        <div class="alert alert-info text-center">
+            Tidak ada karyawan yang ditemukan sesuai kriteria pencarian.
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Filter function
+        function filterEmployees() {
+            const department = $('#department').val();
+            const status = $('#status').val();
+            const search = $('#search').val().toLowerCase();
+            
+            let visible = 0;
+            
+            $('.employee-item').each(function() {
+                const $this = $(this);
+                const employeeDepartment = $this.data('department');
+                const employeeStatus = $this.data('status');
+                const employeeText = $this.text().toLowerCase();
+                
+                const departmentMatch = !department || employeeDepartment === department;
+                const statusMatch = !status || employeeStatus === status;
+                const searchMatch = !search || employeeText.includes(search);
+                
+                if (departmentMatch && statusMatch && searchMatch) {
+                    $this.show();
+                    visible++;
+                } else {
+                    $this.hide();
+                }
+            });
+            
+            if (visible === 0) {
+                $('#noResults').show();
+            } else {
+                $('#noResults').hide();
+            }
+        }
+        
+        // Event listeners
+        $('#department, #status').change(filterEmployees);
+        $('#search').keyup(filterEmployees);
+    });
+</script>
+{% endblock %}

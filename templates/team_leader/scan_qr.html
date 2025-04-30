@@ -1,0 +1,316 @@
+{% extends 'shared/layout.html' %}
+
+{% block title %}Scan Absensi - Sistem Absensi{% endblock %}
+
+{% block styles %}
+<style>
+    .scanner-container {
+        position: relative;
+        width: 100%;
+        max-width: 600px;
+        margin: 0 auto;
+        overflow: hidden;
+        border: 2px solid #4e73df;
+        border-radius: 8px;
+    }
+    
+    #qr-video {
+        width: 100%;
+        height: 480px;
+        object-fit: cover;
+    }
+    
+    .scanner-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background-color: rgba(0, 0, 0, 0.5);
+        color: white;
+        text-align: center;
+        padding: 20px;
+        z-index: 10;
+    }
+    
+    .scan-result {
+        margin-top: 20px;
+        display: none;
+    }
+    
+    .scan-result.show {
+        display: block;
+    }
+    
+    .result-card {
+        border-left: 5px solid #1cc88a;
+    }
+    
+    .spinner {
+        margin: 20px auto;
+        width: 50px;
+        height: 50px;
+        border: 5px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: white;
+        animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    .employee-photo {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 50%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
+    <h1 class="h2"><i class="fas fa-qrcode me-2"></i>Scan Absensi</h1>
+</div>
+
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">Scan QR Code Karyawan</h6>
+                <button id="toggleCamera" class="btn btn-primary btn-sm">
+                    <i class="fas fa-camera me-1"></i>Aktifkan Kamera
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="scanner-container mb-3">
+                    <video id="qr-video" muted></video>
+                    <div class="scanner-overlay" id="scanner-overlay">
+                        <h4><i class="fas fa-camera me-2"></i>Kamera tidak aktif</h4>
+                        <p>Klik tombol "Aktifkan Kamera" untuk mulai scan</p>
+                    </div>
+                </div>
+                
+                <div class="text-center mb-3">
+                    <p class="text-muted">Arahkan QR Code karyawan ke kamera untuk melakukan check-in atau check-out</p>
+                </div>
+                
+                <div class="scan-result" id="scanResult">
+                    <div class="card border-left-success shadow h-100 py-2 result-card">
+                        <div class="card-body">
+                            <div class="spinner" id="loadingSpinner"></div>
+                            <div id="resultContent" style="display: none;">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col-auto mr-3">
+                                        <img src="{{ url_for('static', filename='img/default-profile.png') }}" class="employee-photo" id="employeePhoto">
+                                    </div>
+                                    <div class="col mr-2">
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="employeeName"></div>
+                                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1" id="employeeDetails"></div>
+                                        <div class="mt-2">
+                                            <span class="badge bg-success" id="actionBadge"></span>
+                                            <span class="text-muted ml-2" id="timestamp"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-check-circle fa-2x text-success"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="errorContent" class="text-center text-danger" style="display: none;">
+                                <i class="fas fa-exclamation-circle fa-2x mb-2"></i>
+                                <h5 id="errorMessage"></h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Instruksi Penggunaan</h6>
+            </div>
+            <div class="card-body">
+                <ol>
+                    <li>Klik tombol "Aktifkan Kamera" di atas.</li>
+                    <li>Pastikan kamera aktif dan terlihat jelas.</li>
+                    <li>Arahkan QR Code karyawan ke kamera.</li>
+                    <li>Sistem akan secara otomatis melakukan:</li>
+                    <ul>
+                        <li>Check-in jika karyawan belum check-in hari ini.</li>
+                        <li>Check-out jika karyawan sudah check-in tapi belum check-out.</li>
+                    </ul>
+                    <li>Hasil scan akan ditampilkan pada kotak di atas.</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- QR Code scanner library -->
+<script src="https://unpkg.com/html5-qrcode"></script>
+<script>
+$(document).ready(function() {
+    let html5QrCode = null;
+    let isScanning = false;
+    const qrVideo = document.getElementById('qr-video');
+    const overlay = document.getElementById('scanner-overlay');
+    const toggleButton = document.getElementById('toggleCamera');
+    const scanResult = document.getElementById('scanResult');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    const resultContent = document.getElementById('resultContent');
+    const errorContent = document.getElementById('errorContent');
+    const employeeName = document.getElementById('employeeName');
+    const employeeDetails = document.getElementById('employeeDetails');
+    const employeePhoto = document.getElementById('employeePhoto');
+    const actionBadge = document.getElementById('actionBadge');
+    const timestamp = document.getElementById('timestamp');
+    const errorMessage = document.getElementById('errorMessage');
+    
+    toggleButton.addEventListener('click', function() {
+        if (!isScanning) {
+            startScanner();
+        } else {
+            stopScanner();
+        }
+    });
+    
+    function startScanner() {
+        html5QrCode = new Html5Qrcode("qr-video");
+        
+        html5QrCode.start(
+            { facingMode: "environment" },
+            {
+                fps: 10,
+                qrbox: 250
+            },
+            onScanSuccess,
+            onScanFailure
+        ).then(() => {
+            isScanning = true;
+            toggleButton.innerHTML = '<i class="fas fa-stop me-1"></i>Nonaktifkan Kamera';
+            overlay.style.display = 'none';
+        }).catch((err) => {
+            console.error(`Error starting camera: ${err}`);
+            alert("Tidak dapat mengakses kamera. Pastikan kamera aktif dan Anda telah memberikan izin akses.");
+        });
+    }
+    
+    function stopScanner() {
+        if (html5QrCode) {
+            html5QrCode.stop().then(() => {
+                isScanning = false;
+                toggleButton.innerHTML = '<i class="fas fa-camera me-1"></i>Aktifkan Kamera';
+                overlay.style.display = 'flex';
+                scanResult.classList.remove('show');
+            }).catch((err) => {
+                console.error(`Error stopping camera: ${err}`);
+            });
+        }
+    }
+    
+    function onScanSuccess(decodedText) {
+        // Stop scanning temporarily
+        html5QrCode.pause();
+        
+        // Check if the QR code is a valid scan URL
+        if (decodedText.includes('/scan/')) {
+            const qrToken = decodedText.split('/scan/')[1];
+            processQrCode(qrToken);
+        } else {
+            showError("QR code tidak valid. Gunakan QR code karyawan.");
+            setTimeout(() => {
+                html5QrCode.resume();
+            }, 3000);
+        }
+    }
+    
+    function onScanFailure(error) {
+        // Handle scan failure, just ignore the error and keep scanning
+        // console.warn(`Scan failure: ${error}`);
+    }
+    
+    function processQrCode(qrToken) {
+        // Show loading
+        scanResult.classList.add('show');
+        loadingSpinner.style.display = 'block';
+        resultContent.style.display = 'none';
+        errorContent.style.display = 'none';
+        
+        // Send the token to server for processing
+        fetch('{{ url_for("process_scan") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                qr_token: qrToken
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showSuccess(data);
+            } else {
+                showError(data.message);
+            }
+            
+            // Resume scanning after a delay
+            setTimeout(() => {
+                html5QrCode.resume();
+            }, 3000);
+        })
+        .catch(error => {
+            console.error('Error processing QR code:', error);
+            showError("Terjadi kesalahan saat memproses QR code.");
+            
+            // Resume scanning after a delay
+            setTimeout(() => {
+                html5QrCode.resume();
+            }, 3000);
+        });
+    }
+    
+    function showSuccess(data) {
+        loadingSpinner.style.display = 'none';
+        resultContent.style.display = 'block';
+        errorContent.style.display = 'none';
+        
+        employeeName.textContent = data.employee.name;
+        employeeDetails.textContent = `${data.employee.nik} - ${data.employee.position}`;
+        actionBadge.textContent = data.action === 'check_in' ? 'Check In' : 'Check Out';
+        timestamp.textContent = data.timestamp;
+        
+        // If there's a photo available, use it
+        if (data.employee && data.employee.photo) {
+            employeePhoto.src = `{{ url_for('static', filename='uploads/') }}${data.employee.photo}`;
+        } else {
+            employeePhoto.src = "{{ url_for('static', filename='img/default-profile.png') }}";
+        }
+    }
+    
+    function showError(message) {
+        loadingSpinner.style.display = 'none';
+        resultContent.style.display = 'none';
+        errorContent.style.display = 'block';
+        errorMessage.textContent = message;
+    }
+    
+    // Cleanup when leaving the page
+    window.addEventListener('beforeunload', function() {
+        if (html5QrCode && isScanning) {
+            html5QrCode.stop();
+        }
+    });
+});
+</script>
+{% endblock %}

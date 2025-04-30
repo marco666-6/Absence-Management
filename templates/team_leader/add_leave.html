@@ -1,0 +1,111 @@
+{% extends 'shared/layout.html' %}
+
+{% block title %}Tambah Cuti/Izin - Sistem Absensi{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
+    <h1 class="h2"><i class="fas fa-plus-circle me-2"></i>Tambah Cuti/Izin</h1>
+    <div>
+        <a href="{{ url_for('leaves') }}" class="btn btn-sm btn-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Kembali
+        </a>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card shadow h-100">
+            <div class="card-body">
+                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Informasi</div>
+                <p class="mb-0">
+                    <i class="fas fa-info-circle me-1 text-primary"></i>
+                    Halaman ini digunakan untuk menambahkan data cuti/izin karyawan. Data yang ditambahkan oleh Team Leader akan otomatis disetujui.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Form Tambah Cuti/Izin</h6>
+    </div>
+    <div class="card-body">
+        <form action="{{ url_for('add_leave') }}" method="POST" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label for="employee_id" class="form-label">Karyawan <span class="text-danger">*</span></label>
+                <select class="form-select" id="employee_id" name="employee_id" required>
+                    <option value="">-- Pilih Karyawan --</option>
+                    {% for employee in employees %}
+                    <option value="{{ employee.id }}">{{ employee.name }} ({{ employee.nik }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="mb-3">
+                <label for="leave_type" class="form-label">Jenis Cuti/Izin <span class="text-danger">*</span></label>
+                <select class="form-select" id="leave_type" name="leave_type" required>
+                    <option value="">-- Pilih Jenis --</option>
+                    <option value="sakit">Sakit</option>
+                    <option value="cuti">Cuti</option>
+                    <option value="izin">Izin</option>
+                </select>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="start_date" class="form-label">Tanggal Mulai <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="start_date" name="start_date" required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="end_date" class="form-label">Tanggal Selesai <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="end_date" name="end_date" required>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="reason" class="form-label">Alasan <span class="text-danger">*</span></label>
+                <textarea class="form-control" id="reason" name="reason" rows="3" required></textarea>
+            </div>
+            
+            <div class="mb-3">
+                <label for="attachment" class="form-label">Lampiran (opsional)</label>
+                <input type="file" class="form-control" id="attachment" name="attachment">
+                <small class="form-text text-muted">Format yang didukung: PDF, JPG, PNG. Ukuran maksimal: 5MB.</small>
+            </div>
+            
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                <a href="{{ url_for('leaves') }}" class="btn btn-secondary me-md-2">Batal</a>
+                <button type="submit" class="btn btn-primary">Simpan</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Set minimum date to today for start_date
+    var today = new Date().toISOString().split('T')[0];
+    $('#start_date').val(today);
+    $('#end_date').val(today);
+    
+    // Make sure end_date is not before start_date
+    $('#start_date').on('change', function() {
+        var startDate = $(this).val();
+        if ($('#end_date').val() < startDate) {
+            $('#end_date').val(startDate);
+        }
+        $('#end_date').attr('min', startDate);
+    });
+    
+    // Initialize with correct min value
+    $('#end_date').attr('min', $('#start_date').val());
+});
+</script>
+{% endblock %}

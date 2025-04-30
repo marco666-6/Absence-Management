@@ -1,0 +1,213 @@
+{% extends 'shared/layout.html' %}
+
+{% block title %}Laporan Cuti & Izin - Sistem Absensi{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
+    <h1 class="h2"><i class="fas fa-calendar-alt me-2"></i>Laporan Cuti & Izin</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('team_leader_reports') }}" class="btn btn-sm btn-outline-secondary me-2">
+            <i class="fas fa-arrow-left me-1"></i> Kembali
+        </a>
+        <button type="button" class="btn btn-sm btn-outline-primary" id="btnPrint">
+            <i class="fas fa-print me-1"></i> Cetak
+        </button>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Filter Laporan</h6>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('team_leader_leave_report') }}" class="row g-3">
+                    <div class="col-md-2">
+                        <label for="start_date" class="form-label">Tanggal Mulai</label>
+                        <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date|default('', true)|string }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="end_date" class="form-label">Tanggal Akhir</label>
+                        <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date|default('', true)|string }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="employee_id" class="form-label">Karyawan</label>
+                        <select class="form-select" id="employee_id" name="employee_id">
+                            <option value="">Semua Karyawan</option>
+                            {% for employee in employees %}
+                            <option value="{{ employee.id }}">{{ employee.name }} ({{ employee.nik }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="leave_type" class="form-label">Jenis Izin</label>
+                        <select class="form-select" id="leave_type" name="leave_type">
+                            <option value="">Semua</option>
+                            {% for leave_type in leave_types %}
+                            <option value="{{ leave_type }}">
+                                {% if leave_type == 'sakit' %}Sakit
+                                {% elif leave_type == 'cuti' %}Cuti
+                                {% elif leave_type == 'izin' %}Izin
+                                {% else %}{{ leave_type }}
+                                {% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="">Semua</option>
+                            {% for status in statuses %}
+                            <option value="{{ status }}">
+                                {% if status == 'pending' %}Menunggu
+                                {% elif status == 'approved' %}Disetujui
+                                {% elif status == 'rejected' %}Ditolak
+                                {% else %}{{ status }}
+                                {% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-1 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-search me-1"></i> Filter
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row" id="printableArea">
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">Data Cuti & Izin</h6>
+                <div class="text-muted small">Periode: {{ start_date|default('', true) }} s/d {{ end_date|default('', true) }}</div>
+            </div>
+            <div class="card-body">
+                <div class="mb-3 d-print-none">
+                    <button class="btn btn-sm btn-outline-success" id="btnExportExcel">
+                        <i class="fas fa-file-excel me-1"></i> Export Excel
+                    </button>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover" id="leaveTable">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>No.</th>
+                                <th>NIK</th>
+                                <th>Nama Karyawan</th>
+                                <th>Jenis</th>
+                                <th>Mulai</th>
+                                <th>Berakhir</th>
+                                <th>Durasi</th>
+                                <th>Alasan</th>
+                                <th>Status</th>
+                                <th>Dokumen</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if leave_data %}
+                                {% for leave, employee in leave_data %}
+                                <tr>
+                                    <td>{{ loop.index }}</td>
+                                    <td>{{ employee.nik }}</td>
+                                    <td>{{ employee.name }}</td>
+                                    <td>
+                                        {% if leave.leave_type == 'sakit' %}
+                                            <span class="badge bg-danger">Sakit</span>
+                                        {% elif leave.leave_type == 'cuti' %}
+                                            <span class="badge bg-info">Cuti</span>
+                                        {% elif leave.leave_type == 'izin' %}
+                                            <span class="badge bg-warning">Izin</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ leave.leave_type }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ leave.start_date.strftime('%d-%m-%Y') }}</td>
+                                    <td>{{ leave.end_date.strftime('%d-%m-%Y') }}</td>
+                                    <td>{{ (leave.end_date - leave.start_date).days + 1 }} hari</td>
+                                    <td>{{ leave.reason }}</td>
+                                    <td>
+                                        {% if leave.status == 'pending' %}
+                                            <span class="badge bg-secondary">Menunggu</span>
+                                        {% elif leave.status == 'approved' %}
+                                            <span class="badge bg-success">Disetujui</span>
+                                        {% elif leave.status == 'rejected' %}
+                                            <span class="badge bg-danger">Ditolak</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if leave.document_url %}
+                                            <a href="{{ url_for('static', filename='uploads/' + leave.document_url) }}" target="_blank" class="btn btn-sm btn-info">
+                                                <i class="fas fa-file-alt"></i>
+                                            </a>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="10" class="text-center">Tidak ada data cuti atau izin.</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        $('#leaveTable').DataTable({
+            "ordering": true,
+            "paging": true,
+            "searching": true,
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Indonesian.json"
+            }
+        });
+
+        // Print functionality
+        $('#btnPrint').click(function() {
+            var printContents = document.getElementById('printableArea').innerHTML;
+            var originalContents = document.body.innerHTML;
+            
+            document.body.innerHTML = `
+                <div class="container mt-3">
+                    <h3 class="text-center mb-3">PT Zenith Utama Mandiri</h3>
+                    <h4 class="text-center mb-4">Laporan Cuti & Izin</h4>
+                    ${printContents}
+                </div>
+            `;
+            
+            window.print();
+            document.body.innerHTML = originalContents;
+            location.reload();
+        });
+
+        // Export to Excel
+        $('#btnExportExcel').click(function() {
+            // Use DataTables' built-in export functionality
+            $('#leaveTable').DataTable().buttons.exportData({
+                modifier: {
+                    page: 'all'
+                }
+            });
+            // Or redirect to a server-side export URL
+            // window.location.href = "{{ url_for('export_leave_excel') }}?start_date={{ start_date }}&end_date={{ end_date }}";
+        });
+    });
+</script>
+{% endblock %}

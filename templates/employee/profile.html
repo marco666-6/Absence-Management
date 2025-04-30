@@ -1,0 +1,166 @@
+{% extends 'shared/layout.html' %}
+
+{% block title %}Profil Karyawan - {{ employee.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-id-card me-2"></i>Kartu Identitas Karyawan</h5>
+                </div>
+                <div class="card-body text-center">
+                    {% if employee.profile_pic %}
+                    <img src="{{ url_for('static', filename='uploads/' + employee.profile_pic) }}" alt="{{ employee.name }}" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                    {% else %}
+                    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 150px; height: 150px;">
+                        <i class="fas fa-user fa-4x text-secondary"></i>
+                    </div>
+                    {% endif %}
+                    <h4 class="card-title">{{ employee.name }}</h4>
+                    <p class="card-text text-muted">{{ employee.position }}</p>
+                    <hr>
+                    <div class="text-start">
+                        <p><strong><i class="fas fa-fingerprint me-2"></i>NIK:</strong> {{ employee.nik }}</p>
+                        <p><strong><i class="fas fa-building me-2"></i>Departemen:</strong> {{ employee.department }}</p>
+                        <p><strong><i class="fas fa-envelope me-2"></i>Email:</strong> {{ employee.email }}</p>
+                        <p><strong><i class="fas fa-phone me-2"></i>Telepon:</strong> {{ employee.phone }}</p>
+                        <p><strong><i class="fas fa-user-tie me-2"></i>Team Leader:</strong> {{ employee.team_leader.name }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-qrcode me-2"></i>QR Code Absensi</h5>
+                    <a href="{{ url_for('download_employee_qr', token=employee.qr_token) }}" class="btn btn-light btn-sm">
+                        <i class="fas fa-download me-1"></i>Download QR
+                    </a>
+                </div>
+                <div class="card-body text-center">
+                    <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code" class="img-fluid" style="max-width: 250px;">
+                    <p class="mt-3 text-muted">Tunjukkan QR code ini kepada Team Leader untuk melakukan absensi</p>
+                </div>
+            </div>
+            
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Status Absensi Hari Ini</h5>
+                </div>
+                <div class="card-body">
+                    {% if attendance_today %}
+                        <div class="row text-center">
+                            <div class="col-md-4">
+                                <h6>Status</h6>
+                                {% if attendance_today.status == 'present' %}
+                                    <span class="badge bg-success p-2"><i class="fas fa-check me-1"></i>Hadir</span>
+                                {% elif attendance_today.status == 'late' %}
+                                    <span class="badge bg-warning p-2"><i class="fas fa-clock me-1"></i>Terlambat</span>
+                                {% elif attendance_today.status == 'absent' %}
+                                    <span class="badge bg-danger p-2"><i class="fas fa-times me-1"></i>Tidak Hadir</span>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <h6>Jam Masuk</h6>
+                                {% if attendance_today.check_in %}
+                                    <p>{{ attendance_today.check_in.strftime('%H:%M:%S') }}</p>
+                                {% else %}
+                                    <p class="text-muted">-</p>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <h6>Jam Keluar</h6>
+                                {% if attendance_today.check_out %}
+                                    <p>{{ attendance_today.check_out.strftime('%H:%M:%S') }}</p>
+                                {% else %}
+                                    <p class="text-muted">-</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if attendance_today.notes %}
+                            <div class="mt-3">
+                                <h6>Catatan:</h6>
+                                <p>{{ attendance_today.notes }}</p>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-3">
+                            <i class="fas fa-exclamation-circle fa-2x text-warning mb-3"></i>
+                            <p class="mb-0">Belum ada data absensi untuk hari ini</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if active_leaves %}
+                <div class="card shadow mb-4 border-left-info">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Izin/Cuti Aktif</h5>
+                    </div>
+                    <div class="card-body">
+                        {% for leave in active_leaves %}
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <h6>{{ leave.leave_type|title }}</h6>
+                                    <p class="text-muted mb-0">{{ leave.start_date.strftime('%d/%m/%Y') }} - {{ leave.end_date.strftime('%d/%m/%Y') }}</p>
+                                </div>
+                                <span class="badge bg-success">Disetujui</span>
+                            </div>
+                            <p class="mb-0"><strong>Alasan:</strong> {{ leave.reason }}</p>
+                            {% if not loop.last %}<hr>{% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+            
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-history me-2"></i>Riwayat Absensi</h5>
+                </div>
+                <div class="card-body">
+                    {% if attendance_history %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Tanggal</th>
+                                        <th>Status</th>
+                                        <th>Jam Masuk</th>
+                                        <th>Jam Keluar</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for attendance in attendance_history %}
+                                        <tr>
+                                            <td>{{ attendance.date.strftime('%d/%m/%Y') }}</td>
+                                            <td>
+                                                {% if attendance.status == 'present' %}
+                                                    <span class="badge bg-success">Hadir</span>
+                                                {% elif attendance.status == 'late' %}
+                                                    <span class="badge bg-warning">Terlambat</span>
+                                                {% elif attendance.status == 'absent' %}
+                                                    <span class="badge bg-danger">Tidak Hadir</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ attendance.check_in.strftime('%H:%M:%S') if attendance.check_in else '-' }}</td>
+                                            <td>{{ attendance.check_out.strftime('%H:%M:%S') if attendance.check_out else '-' }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-3">
+                            <i class="fas fa-exclamation-circle fa-2x text-warning mb-3"></i>
+                            <p class="mb-0">Belum ada riwayat absensi</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,283 @@
+{% extends 'shared/layout.html' %}
+
+{% block title %}Laporan Absensi - Sistem Absensi{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
+    <h1 class="h2"><i class="fas fa-calendar-check me-2"></i>Laporan Absensi</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('team_leader_reports') }}" class="btn btn-sm btn-outline-secondary me-2">
+            <i class="fas fa-arrow-left me-1"></i> Kembali
+        </a>
+        <button type="button" class="btn btn-sm btn-outline-primary" id="btnPrint">
+            <i class="fas fa-print me-1"></i> Cetak
+        </button>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Filter Laporan</h6>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('team_leader_attendance_report') }}" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="start_date" class="form-label">Tanggal Mulai</label>
+                        <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date|default('', true)|string }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="end_date" class="form-label">Tanggal Akhir</label>
+                        <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date|default('', true)|string }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="employee_id" class="form-label">Karyawan</label>
+                        <select class="form-select" id="employee_id" name="employee_id">
+                            <option value="">Semua Karyawan</option>
+                            {% for employee in employees %}
+                            <option value="{{ employee.id }}">{{ employee.name }} ({{ employee.nik }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-search me-1"></i> Tampilkan
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row" id="printableArea">
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">Data Absensi</h6>
+                <div class="text-muted small">Periode: {{ start_date|default('', true) }} s/d {{ end_date|default('', true) }}</div>
+            </div>
+            <div class="card-body">
+                <div class="mb-3 d-print-none">
+                    <button class="btn btn-sm btn-outline-success" id="btnExportExcel">
+                        <i class="fas fa-file-excel me-1"></i> Export Excel
+                    </button>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover" id="attendanceTable">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>No.</th>
+                                <th>Tanggal</th>
+                                <th>NIK</th>
+                                <th>Nama</th>
+                                <th>Check In</th>
+                                <th>Check Out</th>
+                                <th>Status</th>
+                                <th>Catatan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if attendance_data is defined and attendance_data|length > 0 %}
+                                {% for attendance, employee in attendance_data %}
+                                <tr>
+                                    <td>{{ loop.index }}</td>
+                                    <td>{{ attendance.date.strftime('%d/%m/%Y') }}</td>
+                                    <td>{{ employee.nik }}</td>
+                                    <td>{{ employee.name }}</td>
+                                    <td>
+                                        {% if attendance.check_in %}
+                                            {{ attendance.check_in.strftime('%H:%M:%S') }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if attendance.check_out %}
+                                            {{ attendance.check_out.strftime('%H:%M:%S') }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if attendance.status == 'present' %}
+                                            <span class="badge bg-success">Hadir</span>
+                                        {% elif attendance.status == 'late' %}
+                                            <span class="badge bg-warning text-dark">Terlambat</span>
+                                        {% elif attendance.status == 'absent' %}
+                                            <span class="badge bg-danger">Tidak Hadir</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ attendance.status }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ attendance.notes or '-' }}</td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="8" class="text-center">Tidak ada data absensi untuk periode yang dipilih</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                {% if attendance_data is defined and attendance_data|length > 0 %}
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="card shadow">
+                            <div class="card-header py-3">
+                                <h6 class="m-0 font-weight-bold text-primary">Ringkasan Status</h6>
+                            </div>
+                            <div class="card-body">
+                                <div id="statusChart" style="height: 250px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card shadow">
+                            <div class="card-header py-3">
+                                <h6 class="m-0 font-weight-bold text-primary">Ketepatan Waktu</h6>
+                            </div>
+                            <div class="card-body">
+                                <div id="timelineChart" style="height: 250px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Signature area for printed version -->
+                <div class="d-none d-print-block mt-5">
+                    <div class="row">
+                        <div class="col-6"></div>
+                        <div class="col-6 text-center">
+                            <p>Jakarta, {{ now().strftime('%d %B %Y') }}</p>
+                            <p>Team Leader,</p>
+                            <br><br><br>
+                            <p class="mt-5"><strong>{{ current_user.name }}</strong></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    $(document).ready(function() {
+        // Initialize DataTable
+        $('#attendanceTable').DataTable({
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Indonesian.json"
+            },
+            "pageLength": 25
+        });
+        
+        // Print functionality
+        $("#btnPrint").click(function() {
+            window.print();
+        });
+        
+        // Export to Excel functionality
+        $("#btnExportExcel").click(function() {
+            // In a real app, this would call a server-side endpoint to generate the Excel file
+            alert("Fungsi export Excel akan diimplementasikan di tahap berikutnya");
+        });
+        
+        {% if attendance_data is defined and attendance_data|length > 0 %}
+        // Charts
+        // Count status occurrences
+        let presentCount = 0;
+        let lateCount = 0;
+        let absentCount = 0;
+        
+        // Count check-in times by hour
+        let hourCounts = {};
+        for (let i = 6; i <= 18; i++) {
+            hourCounts[i] = 0;
+        }
+        
+        {% for attendance, employee in attendance_data %}
+            {% if attendance.status == 'present' %}
+                presentCount++;
+            {% elif attendance.status == 'late' %}
+                lateCount++;
+            {% elif attendance.status == 'absent' %}
+                absentCount++;
+            {% endif %}
+            
+            {% if attendance.check_in %}
+                let hour = {{ attendance.check_in.hour }};
+                if (hour in hourCounts) {
+                    hourCounts[hour]++;
+                }
+            {% endif %}
+        {% endfor %}
+        
+        // Status chart
+        const statusCtx = document.getElementById('statusChart').getContext('2d');
+        const statusChart = new Chart(statusCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Hadir', 'Terlambat', 'Tidak Hadir'],
+                datasets: [{
+                    data: [presentCount, lateCount, absentCount],
+                    backgroundColor: ['#1cc88a', '#f6c23e', '#e74a3b']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+        
+        // Timeline chart
+        const timelineCtx = document.getElementById('timelineChart').getContext('2d');
+        const timelineChart = new Chart(timelineCtx, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(hourCounts).map(hour => `${hour}:00`),
+                datasets: [{
+                    label: 'Check-in',
+                    data: Object.values(hourCounts),
+                    backgroundColor: '#4e73df'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    title: {
+                        display: true,
+                        text: 'Distribusi Jam Check-in'
+                    }
+                }
+            }
+        });
+        {% endif %}
+    });
+</script>
+{% endblock %}

@@ -85,6 +85,7 @@ if __name__ == '__main__':
             admin = User(
                 username='admin',
                 email='admin@zenith.com',
+                name='admin',
                 password=generate_password_hash('admin123'),
                 role='admin',
                 is_active=True

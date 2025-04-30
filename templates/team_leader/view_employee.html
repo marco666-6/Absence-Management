@@ -1,0 +1,312 @@
+{% extends 'shared/layout.html' %}
+
+{% block title %}Detail Karyawan - Sistem Absensi{% endblock %}
+
+{% block styles %}
+<style>
+    .profile-header {
+        background-color: #4e73df;
+        color: white;
+        padding: 2rem 0;
+        border-radius: 0.35rem 0.35rem 0 0;
+    }
+    .profile-pic-large {
+        width: 150px;
+        height: 150px;
+        object-fit: cover;
+        border-radius: 50%;
+        border: 5px solid rgba(255, 255, 255, 0.5);
+    }
+    .nav-tabs .nav-link.active {
+        font-weight: bold;
+        color: #4e73df;
+        border-bottom: 3px solid #4e73df;
+    }
+    .qr-container {
+        text-align: center;
+        padding: 1rem;
+        border: 1px dashed #d1d3e2;
+        border-radius: 0.35rem;
+        margin-bottom: 1rem;
+    }
+    .attendance-status {
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+    .status-present {
+        background-color: #1cc88a;
+        color: white;
+    }
+    .status-late {
+        background-color: #f6c23e;
+        color: white;
+    }
+    .status-absent {
+        background-color: #e74a3b;
+        color: white;
+    }
+    .leave-status-pending {
+        background-color: #f6c23e;
+        color: white;
+    }
+    .leave-status-approved {
+        background-color: #1cc88a;
+        color: white;
+    }
+    .leave-status-rejected {
+        background-color: #e74a3b;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
+    <h1 class="h2"><i class="fas fa-user me-2"></i>Detail Karyawan</h1>
+    <div>
+        <a href="{{ url_for('team_leader_employees') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Kembali
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="profile-header">
+                <div class="container-fluid">
+                    <div class="row align-items-center">
+                        <div class="col-md-2 text-center">
+                            {% if employee.profile_pic %}
+                                <img src="{{ url_for('static', filename='uploads/' + employee.profile_pic) }}" class="profile-pic-large" alt="{{ employee.name }}">
+                            {% else %}
+                                <img src="{{ url_for('static', filename='img/default-profile.png') }}" class="profile-pic-large" alt="{{ employee.name }}">
+                            {% endif %}
+                        </div>
+                        <div class="col-md-10">
+                            <h2>{{ employee.name }}</h2>
+                            <p class="mb-0">{{ employee.position }} | {{ employee.department }}</p>
+                            <div class="mt-2">
+                                <span class="badge rounded-pill {{ 'bg-success' if employee.is_active else 'bg-danger' }}">
+                                    {{ 'Aktif' if employee.is_active else 'Tidak Aktif' }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <ul class="nav nav-tabs mb-4" id="employeeTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="info-tab" data-bs-toggle="tab" data-bs-target="#info" type="button" role="tab" aria-controls="info" aria-selected="true">
+                            <i class="fas fa-info-circle me-1"></i>Informasi
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="attendance-tab" data-bs-toggle="tab" data-bs-target="#attendance" type="button" role="tab" aria-controls="attendance" aria-selected="false">
+                            <i class="fas fa-clipboard-check me-1"></i>Riwayat Absensi
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="leave-tab" data-bs-toggle="tab" data-bs-target="#leave" type="button" role="tab" aria-controls="leave" aria-selected="false">
+                            <i class="fas fa-calendar-alt me-1"></i>Riwayat Izin/Cuti
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="qr-tab" data-bs-toggle="tab" data-bs-target="#qr" type="button" role="tab" aria-controls="qr" aria-selected="false">
+                            <i class="fas fa-qrcode me-1"></i>QR Code
+                        </button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content" id="employeeTabsContent">
+                    <!-- Info Tab -->
+                    <div class="tab-pane fade show active" id="info" role="tabpanel" aria-labelledby="info-tab">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3 row">
+                                    <label class="col-sm-4 fw-bold">NIK</label>
+                                    <div class="col-sm-8">{{ employee.nik }}</div>
+                                </div>
+                                <div class="mb-3 row">
+                                    <label class="col-sm-4 fw-bold">Nama</label>
+                                    <div class="col-sm-8">{{ employee.name }}</div>
+                                </div>
+                                <div class="mb-3 row">
+                                    <label class="col-sm-4 fw-bold">Email</label>
+                                    <div class="col-sm-8"><a href="mailto:{{ employee.email }}">{{ employee.email }}</a></div>
+                                </div>
+                                <div class="mb-3 row">
+                                    <label class="col-sm-4 fw-bold">Telepon</label>
+                                    <div class="col-sm-8"><a href="tel:{{ employee.phone }}">{{ employee.phone }}</a></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3 row">
+                                    <label class="col-sm-4 fw-bold">Departemen</label>
+                                    <div class="col-sm-8">{{ employee.department }}</div>
+                                </div>
+                                <div class="mb-3 row">
+                                    <label class="col-sm-4 fw-bold">Posisi</label>
+                                    <div class="col-sm-8">{{ employee.position }}</div>
+                                </div>
+                                <div class="mb-3 row">
+                                    <label class="col-sm-4 fw-bold">Status</label>
+                                    <div class="col-sm-8">
+                                        <span class="badge {{ 'bg-success' if employee.is_active else 'bg-danger' }}">
+                                            {{ 'Aktif' if employee.is_active else 'Tidak Aktif' }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="mb-3 row">
+                                    <label class="col-sm-4 fw-bold">Terdaftar</label>
+                                    <div class="col-sm-8">{{ employee.created_at.strftime('%d-%m-%Y') }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Attendance History Tab -->
+                    <div class="tab-pane fade" id="attendance" role="tabpanel" aria-labelledby="attendance-tab">
+                        {% if recent_attendance %}
+                            <div class="table-responsive">
+                                <table class="table table-bordered" id="attendanceTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Tanggal</th>
+                                            <th>Check In</th>
+                                            <th>Check Out</th>
+                                            <th>Status</th>
+                                            <th>Catatan</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for attendance in recent_attendance %}
+                                            <tr>
+                                                <td>{{ attendance.date.strftime('%d-%m-%Y') }}</td>
+                                                <td>{% if attendance.check_in %}{{ attendance.check_in.strftime('%H:%M:%S') }}{% else %}-{% endif %}</td>
+                                                <td>{% if attendance.check_out %}{{ attendance.check_out.strftime('%H:%M:%S') }}{% else %}-{% endif %}</td>
+                                                <td>
+                                                    <span class="attendance-status 
+                                                        {% if attendance.status == 'present' %}status-present
+                                                        {% elif attendance.status == 'late' %}status-late
+                                                        {% elif attendance.status == 'absent' %}status-absent{% endif %}">
+                                                        {% if attendance.status == 'present' %}Hadir
+                                                        {% elif attendance.status == 'late' %}Terlambat
+                                                        {% elif attendance.status == 'absent' %}Tidak Hadir{% endif %}
+                                                    </span>
+                                                </td>
+                                                <td>{{ attendance.notes or '-' }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info">
+                                Belum ada riwayat absensi untuk karyawan ini.
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Leave History Tab -->
+                    <div class="tab-pane fade" id="leave" role="tabpanel" aria-labelledby="leave-tab">
+                        {% if recent_leaves %}
+                            <div class="table-responsive">
+                                <table class="table table-bordered" id="leavesTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Jenis</th>
+                                            <th>Mulai</th>
+                                            <th>Selesai</th>
+                                            <th>Status</th>
+                                            <th>Alasan</th>
+                                            <th>Dokumen</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for leave in recent_leaves %}
+                                            <tr>
+                                                <td>
+                                                    {% if leave.leave_type == 'sakit' %}Sakit
+                                                    {% elif leave.leave_type == 'cuti' %}Cuti
+                                                    {% elif leave.leave_type == 'izin' %}Izin{% endif %}
+                                                </td>
+                                                <td>{{ leave.start_date.strftime('%d-%m-%Y') }}</td>
+                                                <td>{{ leave.end_date.strftime('%d-%m-%Y') }}</td>
+                                                <td>
+                                                    <span class="attendance-status 
+                                                        {% if leave.status == 'pending' %}leave-status-pending
+                                                        {% elif leave.status == 'approved' %}leave-status-approved
+                                                        {% elif leave.status == 'rejected' %}leave-status-rejected{% endif %}">
+                                                        {% if leave.status == 'pending' %}Menunggu
+                                                        {% elif leave.status == 'approved' %}Disetujui
+                                                        {% elif leave.status == 'rejected' %}Ditolak{% endif %}
+                                                    </span>
+                                                </td>
+                                                <td>{{ leave.reason }}</td>
+                                                <td>
+                                                    {% if leave.document_url %}
+                                                        <a href="{{ url_for('static', filename='uploads/' + leave.document_url) }}" target="_blank" class="btn btn-sm btn-primary">
+                                                            <i class="fas fa-file-download"></i> Lihat
+                                                        </a>
+                                                    {% else %}
+                                                        -
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info">
+                                Belum ada riwayat izin/cuti untuk karyawan ini.
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- QR Code Tab -->
+                    <div class="tab-pane fade" id="qr" role="tabpanel" aria-labelledby="qr-tab">
+                        <div class="row">
+                            <div class="col-md-6 mx-auto">
+                                <div class="qr-container">
+                                    <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code" class="img-fluid">
+                                </div>
+                                <div class="text-center">
+                                    <p class="mb-3">QR Code untuk absensi <strong>{{ employee.name }}</strong></p>
+                                    <a href="{{ url_for('download_qr', id=employee.id) }}" class="btn btn-primary">
+                                        <i class="fas fa-download me-1"></i>Download QR Code
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        $('#attendanceTable').DataTable({
+            order: [[0, 'desc']],
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.12.1/i18n/id.json'
+            }
+        });
+        
+        $('#leavesTable').DataTable({
+            order: [[1, 'desc']],
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.12.1/i18n/id.json'
+            }
+        });
+    });
+</script>
+{% endblock %}
